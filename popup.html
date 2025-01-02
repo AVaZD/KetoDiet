@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizer Extension</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            width: 200px;
+            padding: 10px;
+        }
+        #triggerUpdate {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin: 5px 0;
+        }
+        #triggerUpdate:hover {
+            background-color: #45a049;
+        }
+        .targets {
+            margin: 10px 0;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 12px;
+            position: relative;
+        }
+        .target-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+        .refresh-button {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: #f8f8f8;
+            font-size: 12px;
+        }
+        .section-title {
+            font-weight: bold;
+            margin: 5px 0;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <h2>Optimizer Extension</h2>
+    <p>Click below to update the page:</p>
+    <button id="triggerUpdate">Update Page</button>
+    <div class="targets" id="targetValues">
+        <div class="section-title">Target Ratios</div>
+        <div class="target-row">
+            <span>Protein:</span>
+            <span id="proteinTarget">-</span>
+        </div>
+        <div class="target-row">
+            <span>Fat:</span>
+            <span id="fatTarget">-</span>
+        </div>
+        <div class="target-row">
+            <span>Carbs:</span>
+            <span id="carbsTarget">-</span>
+        </div>
+        <div class="target-row">
+            <span>Calories:</span>
+            <span id="caloriesTarget">-</span>
+        </div>
+    </div>
+    <button id="refreshTargets" class="refresh-button">↻ Refresh Targets</button>
+    <script src="popup.js"></script>  <!-- Use external JavaScript file -->
+</body>
+</html>

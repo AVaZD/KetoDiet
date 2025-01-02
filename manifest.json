@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Optimizer Extension",
+  "version": "1.0",
+  "description": "Helps update ketodietcalculator",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.ketodietcalculator.org/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.ketodietcalculator.org/*"],
+      "js": ["content.js"],
+      "run_at": "document_end",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
