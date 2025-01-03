@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2024-01-02
+
+### Added
+- Dynamic ratio adjustment based on page default or custom input
+- Flexible ratio customization options
+
+### Known Issues
+- "Refreshing Targets" button doesn't display initial amounts until after first update
+- Second calculation trigger: After initial calculation, the trigger buttons reappear and clicking "Yes" initiates another calculation cycle
+- This secondary calculation may adjust carbs slightly if they're above threshold
+- The behavior is non-blocking but may cause confusion for users
+
 ## [1.0.1] - 2024-01-01
 
 ### Fixed
