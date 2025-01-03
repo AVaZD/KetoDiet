@@ -40,7 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Technical Features
 - Message-passing architecture
-- Content script injection
 - Background service worker
 - Chrome extension manifest v3 support
 

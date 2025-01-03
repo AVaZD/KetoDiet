@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optimizer Extension</title>
+    <title>Keto Diet Calculator- Meal Updating Extension</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -51,14 +51,58 @@
             margin: 5px 0;
             color: #444;
         }
+        .ratio-choice {
+            margin: 10px 0;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background-color: #f9f9f9;
+        }
+        .ratio-selector {
+            display: flex;
+            gap: 10px;
+            margin: 5px 0;
+        }
+        .ratio-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .ratio-value {
+            margin-left: 5px;
+            color: #666;
+            font-size: 12px;
+        }
+        .ratio-row {
+            display: flex;
+            align-items: center;
+            margin: 2px 0;
+        }
     </style>
 </head>
 <body>
-    <h2>Optimizer Extension</h2>
-    <p>Click below to update the page:</p>
-    <button id="triggerUpdate">Update Page</button>
+    <h2>Meal Updating Extension</h2>
+    <div class="ratio-choice">
+        <div class="section-title">Ratio Selection</div>
+        <div class="ratio-selector">
+            <div class="ratio-row">
+                <label class="ratio-option">
+                    <input type="radio" name="ratioChoice" value="page" checked>
+                    Page Ratio:
+                </label>
+                <span class="ratio-value" id="systemRatio">-</span>
+            </div>
+            <div class="ratio-row">
+                <label class="ratio-option">
+                    <input type="radio" name="ratioChoice" value="custom">
+                    Custom:
+                </label>
+                <input type="number" id="customRatio" step="0.1" min="2.0" max="6.0" style="width: 60px;" value="4.0">
+            </div>
+        </div>
+    </div>
     <div class="targets" id="targetValues">
-        <div class="section-title">Target Ratios</div>
+        <div class="section-title">Target Values</div>
         <div class="target-row">
             <span>Protein:</span>
             <span id="proteinTarget">-</span>
@@ -77,6 +121,7 @@
         </div>
     </div>
     <button id="refreshTargets" class="refresh-button">↻ Refresh Targets</button>
+    <button id="triggerUpdate">Update Page</button>
     <script src="popup.js"></script>  <!-- Use external JavaScript file -->
 </body>
 </html>

@@ -51,3 +51,4 @@ See [ROADMAP.md](docs/ROADMAP.md) for planned features and [CHANGELOG.md](docs/C
 
 ## Technical Documentation
 - [Logic Documentation](docs/LOGIC.md) - Detailed calculation logic
+

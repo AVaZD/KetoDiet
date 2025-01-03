@@ -1,12 +1,14 @@
 // content.js
-window.hasContentScript = true;
+if (!window.hasContentScript) {
+    window.hasContentScript = true;
 
 // Target elements configuration
 const TARGET_ELEMENTS = {
     fat: 'ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl07_LblGoalFat',
     protein: 'ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl07_LblGoalPro',
     carbs: 'ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl07_LblGoalCarb',
-    calories: 'ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl07_LblGoalCal'
+    calories: 'ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl07_LblGoalCal',
+    ratio: 'ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl26_LblGoalRatio'  // Get Default Ratio
 };
 
 // Update this function to be more robust
@@ -16,7 +18,8 @@ function findTargetElements() {
         fat: /ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl\d+_LblGoalFat$/,
         protein: /ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl\d+_LblGoalPro$/,
         carbs: /ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl\d+_LblGoalCarb$/,
-        calories: /ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl\d+_LblGoalCal$/
+        calories: /ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl\d+_LblGoalCal$/,
+        ratio: /ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl\d+_LblGoalRatio$/  // Get Default Ratio
     };
 
     // Find all span elements that contain "LblGoal"
@@ -138,7 +141,7 @@ function setupFunctions(pageTargets) {
             Carb: pageTargets.carbs || 3.05,
             Cal: pageTargets.calories || 700,
             Units: 19.72,
-            Ratio: 4
+            Ratio: pageTargets.ratio || 4  // Use page ratio if available, else default to 4
         };
         
         const baseName = "ctl00$MainContent$lvActualMeals$ctrl0$gvActualFoods$ctl";
@@ -210,79 +213,81 @@ function setupFunctions(pageTargets) {
         return adjustedInputs;
     };
 
-    // Adjust Calories and Ratio
-    window.adjustCaloriesAndRatio = function(carbAdjustedInputs, outputLabels) {
-        // Get current targets
-        const pageTargets = extractTargetsFromPage();
-        const CAL_TARGET = pageTargets.calories;
-        const RATIO_TARGET = 4;  // This might need to be extracted if available on page
-        let iterations = 0;
-        const MAX_ITERATIONS = 100; // Increased due to single-unit adjustments
-        let adjustedInputs = [...carbAdjustedInputs];
+   // Adjust Calories and Ratio
+window.adjustCaloriesAndRatio = function(carbAdjustedInputs, outputLabels, customRatio = null) {
+    const pageTargets = extractTargetsFromPage();
+    const CAL_TARGET = pageTargets.calories;
+    
+    // Determine which ratio to use
+    let RATIO_TARGET;
+    if (customRatio === 'page') {
+        // Use page ratio
+        RATIO_TARGET = pageTargets.ratio || 4; // fallback to 4 if page ratio not found
+        console.log('Using page ratio:', RATIO_TARGET);
+    } else if (customRatio !== null) {
+        // Use custom ratio
+        RATIO_TARGET = parseFloat(customRatio);
+        console.log('Using custom ratio:', RATIO_TARGET);
+    } else {
+        // Default fallback
+        RATIO_TARGET = 4;
+        console.log('Using default ratio: 4');
+    }
+    
+    let iterations = 0;
+    const MAX_ITERATIONS = 100;
+    let adjustedInputs = [...carbAdjustedInputs];
 
-        // Find highest fat and protein contributors
-        const nutritionInfo = adjustedInputs.map((_, index) => {
-            const baseName = "ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl";
-            const suffix = window.globalSuffixes[index];
-            return {
-                index,
-                fat: parseFloat(document.getElementById(`${baseName}${suffix}_LblCalcFat`)?.textContent || '0'),
-                protein: parseFloat(document.getElementById(`${baseName}${suffix}_LblCalcPro`)?.textContent || '0')
-            };
+    // Find highest fat and protein contributors
+    const nutritionInfo = carbAdjustedInputs.map((_, index) => {
+        const baseName = "ctl00_MainContent_lvActualMeals_ctrl0_gvActualFoods_ctl";
+        const suffix = window.globalSuffixes[index];
+        return {
+            index,
+            fat: parseFloat(document.getElementById(`${baseName}${suffix}_LblCalcFat`)?.textContent || '0'),
+            protein: parseFloat(document.getElementById(`${baseName}${suffix}_LblCalcPro`)?.textContent || '0')
+        };
+    });
+
+    const highestFat = nutritionInfo.reduce((prev, curr) => 
+        (curr.fat > prev.fat) ? curr : prev, nutritionInfo[0]);
+    const highestProtein = nutritionInfo.reduce((prev, curr) => 
+        (curr.protein > prev.protein) ? curr : prev, nutritionInfo[0]);
+
+    while (iterations < MAX_ITERATIONS) {
+        const currentStats = window.readDataFromWebpage().outputLabels;
+        const currentCal = currentStats['LblTotalCal'];
+        const currentRatio = currentStats['LblTotalRatio'];
+
+        console.log('Current iteration:', {
+            calories: currentCal,
+            ratio: currentRatio,
+            targetRatio: RATIO_TARGET,
+            iteration: iterations
         });
 
-        const highestFat = nutritionInfo.reduce((prev, curr) => 
-            (curr.fat > prev.fat) ? curr : prev, nutritionInfo[0]);
-        const highestProtein = nutritionInfo.reduce((prev, curr) => 
-            (curr.protein > prev.protein) ? curr : prev, nutritionInfo[0]);
-
-        console.log('Starting adjustment with:', {
-            highestFatIndex: highestFat.index,
-            highestProteinIndex: highestProtein.index
-        });
-
-        while (iterations < MAX_ITERATIONS) {
-            // Get current stats
-            const currentStats = window.readDataFromWebpage().outputLabels;
-            const currentCal = currentStats['LblTotalCal'];
-            const currentRatio = currentStats['LblTotalRatio'];
-
-            console.log('Current stats:', {
-                calories: currentCal,
-                ratio: currentRatio,
-                iteration: iterations
-            });
-
-            // Stop if we've reached our calorie target
-            if (currentCal >= CAL_TARGET) {
-                console.log('Reached calorie target');
-                break;
-            }
-
-            // Increment protein by 1 unit
-            adjustedInputs[highestProtein.index] += 1;
-            window.writeOptimizedDataToWebpage(adjustedInputs);
-            
-            // Check ratio after protein increase
-            const statsAfterProtein = window.readDataFromWebpage().outputLabels;
-            if (statsAfterProtein['LblTotalRatio'] < RATIO_TARGET) {
-                // Add 1 unit of fat to maintain ratio
-                adjustedInputs[highestFat.index] += 1;
-                window.writeOptimizedDataToWebpage(adjustedInputs);
-            }
-
-            iterations++;
+        // Stop if we've reached the calorie target
+        if (currentCal >= CAL_TARGET) {
+            break;
         }
 
-        console.log('Adjustment complete:', {
-            finalCalories: window.readDataFromWebpage().outputLabels['LblTotalCal'],
-            finalRatio: window.readDataFromWebpage().outputLabels['LblTotalRatio'],
-            iterations
-        });
+        // First, try to increase protein
+        adjustedInputs[highestProtein.index] += 1;
+        window.writeOptimizedDataToWebpage(adjustedInputs);
+        
+        // Check if ratio dropped below target
+        const newStats = window.readDataFromWebpage().outputLabels;
+        if (newStats['LblTotalRatio'] < RATIO_TARGET) {
+            // Add 1 unit of fat to maintain ratio
+            adjustedInputs[highestFat.index] += 1;
+            window.writeOptimizedDataToWebpage(adjustedInputs);
+        }
 
-        return adjustedInputs;
-    };
+        iterations++;
+    }
 
+    return adjustedInputs;
+};
     // Show Trigger Buttons with state management
     window.showTriggerButtons = function() {
         console.log("showTriggerButtons() function called!");
@@ -350,7 +355,7 @@ function setupFunctions(pageTargets) {
     };
 
     // New optimization function with state management
-    window.runOptimization = async function() {
+    window.runOptimization = async function(customRatio = null) {
         // Check if already running
         if (window.isOptimizing) {
             throw new Error('Optimization already in progress');
@@ -358,13 +363,14 @@ function setupFunctions(pageTargets) {
 
         try {
             window.isOptimizing = true;
+            console.log('Starting optimization with custom ratio:', customRatio);
             const { initialInputs, goals, outputLabels } = window.readDataFromWebpage();
             
             // Phase 1: Carb adjustment
             const carbAdjustedInputs = window.performIterativeAdjustment(initialInputs, outputLabels);
             
-            // Phase 2: Calorie and ratio adjustment
-            const finalAdjustedInputs = window.adjustCaloriesAndRatio(carbAdjustedInputs, outputLabels);
+            // Phase 2: Calorie and ratio adjustment with custom ratio
+            const finalAdjustedInputs = window.adjustCaloriesAndRatio(carbAdjustedInputs, outputLabels, customRatio);
             
             // Final update
             await window.writeOptimizedDataToWebpage(finalAdjustedInputs);
@@ -384,9 +390,9 @@ function setupFunctions(pageTargets) {
         }
     };
 
-    // Update main function to use new runOptimization
-    window.main = function() {
-        window.runOptimization().catch(error => {
+    // Update main function to handle custom ratio
+    window.main = function(customRatio = null) {
+        window.runOptimization(customRatio).catch(error => {
             console.error('Error in main:', error);
         });
     };
@@ -459,7 +465,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === "Trigger update") {
         try {
             if (typeof window.main === 'function') {
-                window.main();
+                window.main(request.customRatio);  // Pass the custom ratio to main
                 sendResponse({ status: "success" });
             } else {
                 throw new Error("Main function not available");
@@ -525,4 +531,5 @@ function sendMessageToBackground(data) {
         console.error('Message send error:', error);
         throw error;
     }
+}
 }

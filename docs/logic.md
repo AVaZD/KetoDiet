@@ -35,7 +35,6 @@ After carbs are optimized, the algorithm adjusts for calories and ketogenic rati
 ```javascript
 function adjustCaloriesAndRatio(carbAdjustedInputs):
     // Constants
-    TARGET_CAL = 700
     TARGET_RATIO = 4.0
     
     // Find highest fat and protein contributors (once, at start)

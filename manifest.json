@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Optimizer Extension",
+  "name": "Keto Diet Calculator Updater",
   "version": "1.0",
-  "description": "Helps update ketodietcalculator",
+  "description": "Helps update ketodietcalculator.org meals",
   "permissions": [
     "activeTab",
     "scripting",
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "host_permissions": [
     "https://www.ketodietcalculator.org/*"

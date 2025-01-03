@@ -6,12 +6,13 @@ document.addEventListener('DOMContentLoaded', function() {
     status.style.cssText = 'margin-top: 10px; color: #666;';
     document.body.appendChild(status);
 
-    // Add function to update target displays
+    // Update function to include ratio
     function updateTargetDisplays(targets) {
         document.getElementById('proteinTarget').textContent = targets.protein?.toFixed(2) || '-';
         document.getElementById('fatTarget').textContent = targets.fat?.toFixed(2) || '-';
         document.getElementById('carbsTarget').textContent = targets.carbs?.toFixed(2) || '-';
         document.getElementById('caloriesTarget').textContent = targets.calories?.toFixed(0) || '-';
+        document.getElementById('systemRatio').textContent = targets.ratio?.toFixed(1) || '4.0';
     }
 
     if (!button) {
@@ -42,6 +43,55 @@ document.addEventListener('DOMContentLoaded', function() {
             status.textContent = 'Error refreshing targets';
             setTimeout(() => status.textContent = '', 2000);
         }
+    });
+
+    // Add custom ratio handler with immediate effect
+    const customRatioInput = document.getElementById('customRatio');
+    if (customRatioInput) {
+        // Force initial value to 4.0
+        customRatioInput.value = "4.0";
+        chrome.storage.local.set({ customRatio: 4.0 });
+
+        customRatioInput.addEventListener('input', function() {
+            const newRatio = parseFloat(this.value);
+            if (newRatio >= 2.0 && newRatio <= 6.0) {
+                chrome.storage.local.set({ 
+                    customRatio: newRatio,
+                    selectedRatioType: 'custom'  // Auto-select custom when user types
+                });
+                document.querySelector('input[name="ratioChoice"][value="custom"]').checked = true;
+            }
+        });
+    }
+
+    // Add ratio choice handler
+    const ratioChoices = document.querySelectorAll('input[name="ratioChoice"]');
+    ratioChoices.forEach(radio => {
+        radio.addEventListener('change', function() {
+            chrome.storage.local.set({ selectedRatioType: this.value });
+            updateRatioDisplay();
+        });
+    });
+
+    // Function to update ratio display based on selection
+    function updateRatioDisplay() {
+        chrome.storage.local.get(['selectedRatioType', 'customRatio'], function(result) {
+            const usePageRatio = result.selectedRatioType === 'page';
+            const customRatioInput = document.getElementById('customRatio');
+            customRatioInput.disabled = usePageRatio;
+            
+            // Don't update custom ratio value when switching, preserve user's custom value
+            if (!usePageRatio && result.customRatio) {
+                customRatioInput.value = result.customRatio.toString();
+            }
+        });
+    }
+
+    // Load saved ratio choice
+    chrome.storage.local.get(['selectedRatioType'], function(result) {
+        const ratioType = result.selectedRatioType || 'page';
+        document.querySelector(`input[name="ratioChoice"][value="${ratioType}"]`).checked = true;
+        updateRatioDisplay();
     });
 
     // Modify tryConnectToContentScript to get targets
@@ -98,8 +148,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('Could not connect to page. Please refresh and try again.');
             }
 
+            // Get the selected ratio type and custom ratio value
+            const ratioSettings = await chrome.storage.local.get(['selectedRatioType', 'customRatio']);
+            const useCustomRatio = ratioSettings.selectedRatioType === 'custom';
+            
+            // If using page ratio, send 'page' as the value, otherwise send the custom ratio
+            const ratioValue = useCustomRatio ? 
+                (parseFloat(ratioSettings.customRatio) || 4) : 
+                'page';
+            
+            console.log('Using ratio:', useCustomRatio ? 'custom' : 'page', 'Value:', ratioValue);
+
             status.textContent = 'Updating...';
-            const response = await chrome.tabs.sendMessage(tab.id, {message: "Trigger update"});
+            const response = await chrome.tabs.sendMessage(tab.id, {
+                message: "Trigger update",
+                customRatio: ratioValue
+            });
             
             if (response?.status === "success") {
                 status.textContent = 'Update successful!';
